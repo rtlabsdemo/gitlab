@@ -1,0 +1,33 @@
+---
+- name: gitlab setup
+  hosts: all
+  gather_facts: no
+  become: yes
+
+  vars:
+    gitlab_external_url: "http://gitlab.local/"
+
+  tasks:
+    - name: packages
+      apt:
+        name:
+          - curl
+          - openssh-server
+          - ca-certificates
+        state: present
+        update_cache: yes
+
+    - name: script
+      get_url:
+        url: https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh
+        dest: /tmp/script.deb.sh
+    
+    - name: execute script
+      command: /bin/bash /tmp/script.deb.sh
+      changed_when: false
+
+    - name: install package
+      apt: name=gitlab-ce state=present
+      environment:
+        EXTERNAL_URL: "{{ gitlab_external_url }}"
+...

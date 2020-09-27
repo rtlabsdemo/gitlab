@@ -1,0 +1,48 @@
+---
+- name: gitlab setup
+  hosts: all
+  gather_facts: no
+  become: yes
+
+  vars:
+    gitlab_runner_token: ""
+
+  tasks:
+    - name: install packages
+      package:
+        name:
+          - docker.io
+          - gnupg2
+          - apt-transport-https
+          - curl
+        state: present
+
+    - name: install gitlab runner
+      apt:
+        deb: https://gitlab-runner-downloads.s3.amazonaws.com/latest/deb/gitlab-runner_amd64.deb
+
+    - name: add runner to docker group
+      user:
+        name: gitlab-runner
+        append: yes
+        groups: docker
+
+    - name: register
+      command: >
+        gitlab-runner register
+          --non-interactive
+          --url "http://127.0.0.1/"
+          --registration-token "{{ gitlab_runner_token }}"
+          --executor "shell"
+          --description "localhost runner"
+          --tag-list "localhost"
+          --run-untagged="true"
+          --locked="false"
+          --access-level="not_protected"
+
+    - name: restart gitlab-runner
+      systemd:
+        name: gitlab-runner
+        state: restarted
+        enabled: yes
+...
